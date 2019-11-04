@@ -1,0 +1,4 @@
+sources:
+
+  webhook-test:
+    hashTemplate: "{{.name}}-2"
