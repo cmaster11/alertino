@@ -9,10 +9,11 @@ import (
 )
 
 var opts struct {
-	LogLevel *string `short:"v" long:"log-level" description:"Literal log level"`
+	config.AppConfig
 
-	ConfigFile       string   `short:"c" long:"app-config" required:"true" description:"App configuration file"`
-	InputConfigFiles []string `short:"i" long:"io-config" required:"true" description:"One or multiple input/output configuration files to use"`
+	LogLevel *string `short:"v" long:"logLevel" description:"Literal log level"`
+
+	ConfigFiles []string `short:"c" long:"config" required:"true" description:"One or multiple input/output configuration files to use"`
 }
 
 func main() {
@@ -31,25 +32,20 @@ func main() {
 		logrus.SetLevel(logLevel)
 	}
 
-	appConfig, err := config.ParseAppConfigFromFile(opts.ConfigFile)
-	if err != nil {
-		logrus.Fatalf("failed to parse app config: %s", err)
-	}
-
-	ioConfig, err := config.ParseIOConfigFiles(opts.InputConfigFiles)
+	ioConfig, err := config.ParseIOConfigFiles(opts.ConfigFiles)
 	if err != nil {
 		logrus.Fatalf("failed to parse io config: %s", err)
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"appConfig": appConfig,
+		"appConfig": opts.AppConfig,
 		"ioConfig":  ioConfig,
 	}).Debug("loaded configs")
 
-	alertino := alertino.Alertino{
-		AppConfig: appConfig,
+	instance := alertino.Alertino{
+		AppConfig: &opts.AppConfig,
 		IOConfig:  ioConfig,
 	}
 
-	alertino.Run()
+	instance.Run()
 }

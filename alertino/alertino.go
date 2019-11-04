@@ -12,7 +12,6 @@ type Alertino struct {
 
 func (a *Alertino) Run() {
 
-	a.AppConfig.PanicIfInvalid()
 	a.IOConfig.PanicIfInvalid()
 
 	// Mount all input apis
@@ -26,5 +25,9 @@ func (a *Alertino) Run() {
 		}
 	}
 
-	util.PanicIfError(router.Run())
+	listenAddress := ":8080"
+	if a.AppConfig.ListenAddr != nil {
+		listenAddress = *a.AppConfig.ListenAddr
+	}
+	util.PanicIfError(router.Run(listenAddress))
 }

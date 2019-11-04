@@ -20,6 +20,7 @@ type InputSource struct {
 
 	// Contains the go-template used to calculate the hash of an alert
 	HashTemplate *util.Template `yaml:"hashTemplate"` // validate:"required"
+
 }
 
 // Merges current config by importing another config. Returns current config after merge
