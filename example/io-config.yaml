@@ -1,0 +1,31 @@
+inputs:
+
+  webhook-test:
+    hashTemplate: "{{.name}}-2"
+  webhook-test2:
+    hashTemplate: "{{.name}}"
+
+outputs:
+
+  many:
+    stdOut: true
+    webHook: http://lol.com
+
+rules:
+
+  - tag: Std1
+    outputIds:
+      - many
+    when:
+      - inputId: webhook-test
+
+  - tag: Std2
+    outputIds:
+      - many
+    when:
+      - inputId: webhook-test
+        if:
+          - eq .name "bla"
+      - inputId: webhook-test2
+        if:
+          - eq .name "bla"

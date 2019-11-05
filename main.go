@@ -1,11 +1,13 @@
 package main
 
 import (
+	"os"
+
 	"alertino/alertino"
 	"alertino/config"
+	"alertino/util"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
-	"os"
 )
 
 var opts struct {
@@ -13,14 +15,14 @@ var opts struct {
 
 	LogLevel *string `short:"v" long:"logLevel" description:"Literal log level"`
 
-	ConfigFiles []string `short:"c" long:"config" required:"true" description:"One or multiple input/output configuration files to use"`
+	AppConfigFile string   `short:"c" long:"app-config" required:"true" description:"App configuration file to use"`
+	IOConfigFiles []string `short:"i" long:"io-config" required:"true" description:"One or multiple input/output configuration files to use"`
 }
 
 func main() {
 	_, err := flags.Parse(&opts)
 
 	if err != nil {
-		//logrus.Fatalf("failed to parse flags: %s", err)
 		os.Exit(1)
 	}
 
@@ -32,18 +34,23 @@ func main() {
 		logrus.SetLevel(logLevel)
 	}
 
-	ioConfig, err := config.ParseIOConfigFiles(opts.ConfigFiles)
+	appConfig, err := config.ParseAppConfigFile(opts.AppConfigFile)
+	if err != nil {
+		logrus.Fatalf("failed to parse io config: %s", err)
+	}
+
+	ioConfig, err := config.ParseIOConfigFiles(opts.IOConfigFiles)
 	if err != nil {
 		logrus.Fatalf("failed to parse io config: %s", err)
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"appConfig": opts.AppConfig,
-		"ioConfig":  ioConfig,
+		"appConfig": util.Dump(appConfig),
+		"ioConfig":  util.Dump(ioConfig),
 	}).Debug("loaded configs")
 
 	instance := alertino.Alertino{
-		AppConfig: &opts.AppConfig,
+		AppConfig: appConfig,
 		IOConfig:  ioConfig,
 	}
 

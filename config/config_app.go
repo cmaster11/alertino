@@ -1,9 +1,15 @@
 package config
 
+import (
+	"alertino/util"
+)
+
 // Represents the configuration for the app
 type AppConfig struct {
-	ListenAddr *string `short:"a" long:"listenAddr" description:"Address (HOST:PORT) to serve API endpoints on"`
+	util.Validable
+
+	ListenAddr *string `yaml:"listenAddr"`
 
 	// MongoDB connection string
-	MongoDBConnString string `short:"m" long:"mongoDBConnString" required:"true" description:"MongoDB connection string"`
+	MongoDBConnString string `yaml:"mongoDBConnString" required:"true"`
 }

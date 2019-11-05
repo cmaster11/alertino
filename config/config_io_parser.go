@@ -2,8 +2,9 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Merges multiple config files into one single config
@@ -25,6 +26,10 @@ func ParseIOConfigFiles(files []string) (*IOConfig, error) {
 		if finalConfig, err = finalConfig.Merge(singleConfig); err != nil {
 			return nil, fmt.Errorf("failed to merge config for file %s: %w", file, err)
 		}
+	}
+
+	if err := finalConfig.Validate(); err != nil {
+		return nil, fmt.Errorf("config validation error: %w", err)
 	}
 
 	return finalConfig, nil

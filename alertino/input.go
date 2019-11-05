@@ -1,20 +1,21 @@
 package alertino
 
 import (
-	"alertino/config"
 	"fmt"
+	"net/http"
+
+	"alertino/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
-func (a *Alertino) registerInputHandler(router gin.IRouter, key string, source *config.InputSource) {
+func (a *Alertino) apiRegisterInputHandler(router gin.IRouter, key string, input *models.IOInput) {
 	fn := func(context *gin.Context) {
 		log := logrus.WithFields(logrus.Fields{
 			"inputKey": key,
 		})
-		if err := a.processInput(log, context, key, source); err != nil {
+		if err := a.apiProcessInput(log, context, key, input); err != nil {
 			logrus.Error(err)
 			context.AbortWithError(http.StatusBadRequest, err)
 			return
@@ -27,7 +28,7 @@ func (a *Alertino) registerInputHandler(router gin.IRouter, key string, source *
 }
 
 // Input entry point
-func (a *Alertino) processInput(log logrus.FieldLogger, c *gin.Context, key string, source *config.InputSource) error {
+func (a *Alertino) apiProcessInput(log logrus.FieldLogger, c *gin.Context, inputId string, input *models.IOInput) error {
 	payload := make(map[string]interface{})
 	if err := c.ShouldBindWith(&payload, binding.JSON); err != nil {
 		return err
@@ -36,16 +37,28 @@ func (a *Alertino) processInput(log logrus.FieldLogger, c *gin.Context, key stri
 
 	log.Info("got request")
 
+	var hash *string
+
 	// Process deduplication, which is possible only if there is a hash template
-	if source.HashTemplate != nil {
-		hashTemplate, err := source.HashTemplate.Execute(payload)
+	if input.HashTemplate != nil {
+		hashTemplate, err := input.HashTemplate.Execute(payload)
 		if err != nil {
 			return fmt.Errorf("failed to calculate deduplication hash: %w", err)
 		}
 
 		log = log.WithField("hashTemplate", hashTemplate)
 		log.Debug("with hash")
+
+		hash = &hashTemplate
 	}
+
+	queueItem := &models.QueueInputItem{
+		InputId: inputId,
+		Args:    payload,
+		Hash:    hash,
+	}
+
+	a.queueProcessInputItem(queueItem)
 
 	return nil
 }

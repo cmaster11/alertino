@@ -1,43 +1,81 @@
 package config
 
 import (
-	"alertino/util"
 	"fmt"
+
+	"alertino/models"
+	"alertino/util"
 )
 
 // Represents the configuration for incoming alerts and outgoing things
 type IOConfig struct {
 	util.Validable
 
-	// Incoming sources, e.g. `grafana-prod`
-	Sources map[string]*InputSource `yaml:"sources" validate:"dive,keys,urlfriendly,endkeys,required"`
-}
+	// Incoming inputs, e.g. `grafana-prod`
+	Inputs map[string]*models.IOInput `yaml:"inputs" validate:"dive,keys,urlfriendly,endkeys,required"`
 
-// We want to be able to parse multiple incoming payloads depending on the source, e.g. Grafana alert.
-// Here's the source configuration
-type InputSource struct {
-	util.Validable
+	// Outputs, e.g. `email`, `webhook`
+	Outputs map[string]*models.IOOutput `yaml:"outputs" validate:"dive,keys,urlfriendly,endkeys,required"`
 
-	// Contains the go-template used to calculate the hash of an alert
-	HashTemplate *util.Template `yaml:"hashTemplate"` // validate:"required"
-
+	// The rules which will trigger alerts generation
+	Rules []*models.AlertRule `yaml:"rules"`
 }
 
 // Merges current config by importing another config. Returns current config after merge
 func (c *IOConfig) Merge(otherConfig *IOConfig) (*IOConfig, error) {
 
-	if c.Sources == nil {
-		c.Sources = make(map[string]*InputSource)
+	// Merge inputs
+	if c.Inputs == nil {
+		c.Inputs = make(map[string]*models.IOInput)
 	}
 
-	// Merge sources
-	for key, src := range otherConfig.Sources {
-		if _, found := c.Sources[key]; found {
-			return nil, fmt.Errorf("config source %s already exists", key)
+	for key, src := range otherConfig.Inputs {
+		if _, found := c.Inputs[key]; found {
+			return nil, fmt.Errorf("config input %s already exists", key)
 		}
 
-		c.Sources[key] = src
+		c.Inputs[key] = src
+	}
+
+	// Merge outputs
+	if c.Outputs == nil {
+		c.Outputs = make(map[string]*models.IOOutput)
+	}
+	for key, output := range otherConfig.Outputs {
+		if _, found := c.Outputs[key]; found {
+			return nil, fmt.Errorf("config output %s already exists", key)
+		}
+
+		c.Outputs[key] = output
+	}
+
+	// Merge rules
+	for _, rule := range otherConfig.Rules {
+		c.Rules = append(c.Rules, rule)
 	}
 
 	return c, nil
+}
+
+func (c *IOConfig) Validate() error {
+	if err := util.Validate.Struct(c); err != nil {
+		return fmt.Errorf("validation error: %w", err)
+	}
+
+	// Check that there are no mistypings in the rules
+	for _, rule := range c.Rules {
+		for _, outputId := range rule.OutputIds {
+			if _, found := c.Outputs[outputId]; !found {
+				return fmt.Errorf("validation error: output %s not found", outputId)
+			}
+		}
+
+		for _, condition := range rule.When {
+			if _, found := c.Inputs[condition.InputId]; !found {
+				return fmt.Errorf("validation error: input %s not found", condition.InputId)
+			}
+		}
+	}
+
+	return nil
 }
