@@ -1,6 +1,7 @@
 package alertino
 
 import (
+	"crypto/md5"
 	"fmt"
 	"net/http"
 
@@ -41,15 +42,17 @@ func (a *Alertino) apiProcessInput(log logrus.FieldLogger, c *gin.Context, input
 
 	// Process deduplication, which is possible only if there is a hash template
 	if input.HashTemplate != nil {
-		hashTemplate, err := input.HashTemplate.Execute(payload)
+		hashExecuted, err := input.HashTemplate.Execute(payload)
 		if err != nil {
 			return fmt.Errorf("failed to calculate deduplication hash: %w", err)
 		}
 
-		log = log.WithField("hashTemplate", hashTemplate)
-		log.Debug("with hash")
+		md5Hash := md5.Sum([]byte(hashExecuted))
+		hashString := fmt.Sprintf("%x", md5Hash)
+		hash = &hashString
 
-		hash = &hashTemplate
+		log = log.WithField("hash", hashString)
+		log.Debug("with hash")
 	}
 
 	queueItem := &models.QueueInputItem{
