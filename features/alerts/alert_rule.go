@@ -1,9 +1,9 @@
-package models
+package alerts
 
 import (
 	"fmt"
 
-	"alertino/util"
+	"github.com/cmaster11/alertino/platform/util"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,7 +42,7 @@ func (r *AlertRule) Validate() error {
 	return nil
 }
 
-func (r *AlertRule) MatchesQueueInputItem(item *QueueInputItem) bool {
+func (r *AlertRule) MatchesQueueInputItem(item *io.QueueInputItem) bool {
 
 	match := true
 

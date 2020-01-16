@@ -5,5 +5,5 @@ import (
 )
 
 func Dump(el interface{}) string {
-	return fmt.Sprintf("%+v", el)
+	return fmt.Sprintf("%#v", el)
 }

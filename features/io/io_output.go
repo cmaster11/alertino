@@ -1,9 +1,9 @@
-package models
+package io
 
 import (
 	"fmt"
 
-	"alertino/util"
+	"github.com/cmaster11/alertino/platform/util"
 )
 
 // We want to be able to send data to multiple outputs depending on rules

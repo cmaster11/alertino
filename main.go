@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"alertino/alertino"
-	"alertino/config"
-	"alertino/util"
+	"github.com/cmaster11/alertino/alertino"
+	"github.com/cmaster11/alertino/features/config"
+	"github.com/cmaster11/alertino/platform/util"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
 )

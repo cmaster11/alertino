@@ -1,7 +1,7 @@
-package models
+package alerts
 
 import (
-	"alertino/util"
+	"github.com/cmaster11/alertino/platform/util"
 )
 
 type AlertRuleCondition struct {

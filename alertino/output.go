@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"strings"
 
-	"alertino/models"
-	"alertino/util"
+	"github.com/cmaster11/alertino/features/io"
+	"github.com/cmaster11/alertino/platform/util"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/sirupsen/logrus"
 )
 
-func (a *Alertino) processOutput(output *models.IOOutput, outputItem *models.QueueOutputItem) error {
+func (a *Alertino) processOutput(output *io.IOOutput, outputItem *io.QueueOutputItem) error {
 
 	var errors []error
 

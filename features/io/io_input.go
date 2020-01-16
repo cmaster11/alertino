@@ -1,7 +1,7 @@
-package models
+package io
 
 import (
-	"alertino/util"
+	"github.com/cmaster11/alertino/platform/util"
 )
 
 // We want to be able to parse multiple incoming payloads depending on the input, e.g. Grafana alert.

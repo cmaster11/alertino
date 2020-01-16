@@ -1,12 +1,12 @@
 package alertino
 
 import (
-	"alertino/models"
-	"alertino/util"
+	"github.com/cmaster11/alertino/features/io"
+	"github.com/cmaster11/alertino/platform/util"
 	"github.com/sirupsen/logrus"
 )
 
-func (a *Alertino) queueProcessOutputItem(outputItem *models.QueueOutputItem) {
+func (a *Alertino) queueProcessOutputItem(outputItem *io.QueueOutputItem) {
 
 	output, found := a.IOConfig.Outputs[outputItem.OutputId]
 	if !found {

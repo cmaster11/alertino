@@ -2,9 +2,10 @@ package util
 
 import (
 	"fmt"
+	"regexp"
+
 	"github.com/sirupsen/logrus"
 	"gopkg.in/go-playground/validator.v9"
-	"regexp"
 )
 
 var Validate = validator.New()

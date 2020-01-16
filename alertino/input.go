@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"alertino/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/sirupsen/logrus"
 )
 
-func (a *Alertino) apiRegisterInputHandler(router gin.IRouter, key string, input *models.IOInput) {
+func (a *Alertino) apiRegisterInputHandler(router gin.IRouter, key string, input *io.IOInput) {
 	fn := func(context *gin.Context) {
 		log := logrus.WithFields(logrus.Fields{
 			"inputKey": key,
@@ -29,7 +28,7 @@ func (a *Alertino) apiRegisterInputHandler(router gin.IRouter, key string, input
 }
 
 // Input entry point
-func (a *Alertino) apiProcessInput(log logrus.FieldLogger, c *gin.Context, inputId string, input *models.IOInput) error {
+func (a *Alertino) apiProcessInput(log logrus.FieldLogger, c *gin.Context, inputId string, ioInput *io.IOInput) error {
 	payload := make(map[string]interface{})
 	if err := c.ShouldBindWith(&payload, binding.JSON); err != nil {
 		return err
@@ -41,8 +40,8 @@ func (a *Alertino) apiProcessInput(log logrus.FieldLogger, c *gin.Context, input
 	var hash *string
 
 	// Process deduplication, which is possible only if there is a hash template
-	if input.HashTemplate != nil {
-		hashExecuted, err := input.HashTemplate.Execute(payload)
+	if ioInput.HashTemplate != nil {
+		hashExecuted, err := ioInput.HashTemplate.Execute(payload)
 		if err != nil {
 			return fmt.Errorf("failed to calculate deduplication hash: %w", err)
 		}
@@ -55,7 +54,7 @@ func (a *Alertino) apiProcessInput(log logrus.FieldLogger, c *gin.Context, input
 		log.Debug("with hash")
 	}
 
-	queueItem := &models.QueueInputItem{
+	queueItem := &io.QueueInputItem{
 		InputId: inputId,
 		Args:    payload,
 		Hash:    hash,

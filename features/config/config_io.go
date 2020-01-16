@@ -3,8 +3,9 @@ package config
 import (
 	"fmt"
 
-	"alertino/models"
-	"alertino/util"
+	"github.com/cmaster11/alertino/features/alerts"
+	"github.com/cmaster11/alertino/features/io"
+	"github.com/cmaster11/alertino/platform/util"
 )
 
 // Represents the configuration for incoming alerts and outgoing things
@@ -12,13 +13,13 @@ type IOConfig struct {
 	util.Validable
 
 	// Incoming inputs, e.g. `grafana-prod`
-	Inputs map[string]*models.IOInput `yaml:"inputs" validate:"dive,keys,urlfriendly,endkeys,required"`
+	Inputs map[string]*io.IOInput `yaml:"inputs" validate:"dive,keys,urlfriendly,endkeys,required"`
 
 	// Outputs, e.g. `email`, `webhook`
-	Outputs map[string]*models.IOOutput `yaml:"outputs" validate:"dive,keys,urlfriendly,endkeys,required"`
+	Outputs map[string]*io.IOOutput `yaml:"outputs" validate:"dive,keys,urlfriendly,endkeys,required"`
 
 	// The rules which will trigger alerts generation
-	Rules []*models.AlertRule `yaml:"rules"`
+	Rules []*alerts.AlertRule `yaml:"rules"`
 }
 
 // Merges current config by importing another config. Returns current config after merge
@@ -26,7 +27,7 @@ func (c *IOConfig) Merge(otherConfig *IOConfig) (*IOConfig, error) {
 
 	// Merge inputs
 	if c.Inputs == nil {
-		c.Inputs = make(map[string]*models.IOInput)
+		c.Inputs = make(map[string]*io.IOInput)
 	}
 
 	for key, src := range otherConfig.Inputs {
@@ -39,7 +40,7 @@ func (c *IOConfig) Merge(otherConfig *IOConfig) (*IOConfig, error) {
 
 	// Merge outputs
 	if c.Outputs == nil {
-		c.Outputs = make(map[string]*models.IOOutput)
+		c.Outputs = make(map[string]*io.IOOutput)
 	}
 	for key, output := range otherConfig.Outputs {
 		if _, found := c.Outputs[key]; found {

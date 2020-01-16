@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"alertino/util"
+	"github.com/cmaster11/alertino/features/auth"
+	"github.com/cmaster11/alertino/platform"
+	"github.com/cmaster11/alertino/util"
 	"github.com/coreos/go-oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -62,14 +64,23 @@ func (a *Alertino) routeOAuth2LoginGoogle(c *gin.Context) {
 	// Generate a one-usage state
 	state, err := util.NewSeqMD5Id()
 	if err != nil {
-		_ = c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to generate random state id: %w", err))
+		_ = c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to generate random session state id: %w", err))
 		return
 	}
 
-	now := time.Now()
-	_, err = a.redisClient.Set(oAuth2StatePrefix+state, now.UnixNano(), 5*time.Minute).Result()
+	expiresAt := time.Now().Add(5 * time.Minute)
+	session := &auth.ModelSession{
+		ExpiringDbModel: platform.ExpiringDbModel{
+			DbModel: platform.DbModel{
+				Key: oAuth2StatePrefix + state,
+			},
+			ExpiresAt: expiresAt.Unix(),
+		},
+	}
+
+	_, err = a.ArangoDBCollections.Sessions.CreateDocument(nil, session)
 	if err != nil {
-		_ = c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to store random state id: %w", err))
+		_ = c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to store random session state id: %w", err))
 		return
 	}
 
@@ -78,8 +89,10 @@ func (a *Alertino) routeOAuth2LoginGoogle(c *gin.Context) {
 
 func (a *Alertino) routeOAuth2CallbackGoogle(c *gin.Context) {
 	state := c.Query("state")
+
 	// Verify that a state exists
-	_, err := a.redisClient.Get(oAuth2StatePrefix + state).Result()
+	var modelSession auth.ModelSession
+	_, err := a.ArangoDBCollections.Sessions.ReadDocument(nil, oAuth2StatePrefix+state, &modelSession)
 	if err != nil {
 		_ = c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to get oauth2 state: %w", err))
 		return
@@ -124,5 +137,5 @@ func (a *Alertino) routeOAuth2CallbackGoogle(c *gin.Context) {
 	}
 
 	// Login was successful, so delete the state
-	_, _ = a.redisClient.Del(oAuth2StatePrefix + state).Result()
+	_, _ = a.ArangoDBCollections.Sessions.RemoveDocument(nil, oAuth2StatePrefix+state)
 }

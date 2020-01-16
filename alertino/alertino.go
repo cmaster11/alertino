@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"alertino/config"
-	"alertino/util"
+	"github.com/cmaster11/alertino/features/config"
+	"github.com/cmaster11/alertino/platform/util"
 	"github.com/coreos/go-oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v7"
 	"golang.org/x/oauth2"
 )
 
@@ -19,14 +18,15 @@ type Alertino struct {
 	AppConfig *config.AppConfig
 	IOConfig  *config.IOConfig
 
+	// DB
+	ArangoDBCollections *ArangoDBCollections
+
 	// Internals
 	httpClient   *http.Client
 	oidcProvider *oidc.Provider
 	oidcVerifier *oidc.IDTokenVerifier
 	oAuth2Config *oauth2.Config
 	sessionStore cookie.Store
-
-	redisClient *redis.Client
 }
 
 func (a *Alertino) Run() {
@@ -35,7 +35,7 @@ func (a *Alertino) Run() {
 	a.IOConfig.PanicIfInvalid()
 
 	// --- Initialize internals
-	a.setupRedis()
+	a.ArangoDBCollections = setupArangoDB(a.AppConfig.ArangoDB)
 
 	// Output
 	a.httpClient = &http.Client{}
@@ -43,26 +43,17 @@ func (a *Alertino) Run() {
 	// Mount all input apis
 	router := util.NewRouter()
 	a.setupSessions(router)
-	a.setupOAuth2(router)
+	// a.setupOAuth2(router)
 	a.mountRoutes(router)
+
+	// Start the main app loop
+	go a.loop()
 
 	listenAddress := ":8080"
 	if a.AppConfig.ListenAddr != nil {
 		listenAddress = *a.AppConfig.ListenAddr
 	}
 	util.PanicIfError(router.Run(listenAddress))
-}
-
-func (a *Alertino) setupRedis() {
-	client := redis.NewClient(&redis.Options{
-		Addr:     a.AppConfig.RedisConfig.Addr,
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
-	a.redisClient = client
-	_, err := client.Ping().Result()
-	util.PanicIfError(err)
 }
 
 func (a *Alertino) setupSessions(router *gin.Engine) {

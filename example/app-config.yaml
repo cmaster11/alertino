@@ -1,3 +1,12 @@
 listenAddr: localhost:8080
 
-mongoDBConnString: mongodb://localhost:27017
+arangoDB:
+  coordinators:
+    - host: localhost
+      port: 8529
+
+  database: alertino
+  username: alertino
+  password: asdasd
+
+sessionSecret: "iTBXz9DYANreV1wHiH46KwpPEkHlUx4Vmol6tWGmz7euX19BQRUk9T7rncOsUmpO3RKcMVkdhldJRTJmZXMVKw=="
